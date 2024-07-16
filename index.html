@@ -9,7 +9,7 @@
     <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
     <style>
         #map {
-            height: 600px;
+            height: 500px;
             width: 100%;
             position: relative; /* Necesario para posicionar elementos absolutos */
         }
@@ -39,14 +39,14 @@
             border-radius: 5px;
             cursor: pointer;
             position: absolute;
-            top: 200px;
-            left: 10px;
+            top: 20px;
+            left: 200px;
             z-index: 1000;
         }
     </style>
 </head>
 <body>
-    <h1>Mapa de Calor de Antigüedad de Alumbrado Público</h1>
+    <h2>Antigüedad de Alumbrado Público</h2>
     <div id="map"></div>
     <button class="btn-toggle" id="toggleHeatmap">Activar Mapa de Calor</button>
     <script>
