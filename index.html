@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mapa de Calor de Antigüedad de Alumbrado Público</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+            position: relative; /* Necesario para posicionar elementos absolutos */
+        }
+        .legend {
+            background: white;
+            padding: 10px;
+            line-height: 1.5;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+        }
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+        }
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .btn-toggle {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            position: absolute;
+            top: 200px;
+            left: 10px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mapa de Calor de Antigüedad de Alumbrado Público</h1>
+    <div id="map"></div>
+    <button class="btn-toggle" id="toggleHeatmap">Activar Mapa de Calor</button>
+    <script>
+        // Crear un objeto mapa
+        var map = L.map("map").setView([-12.06990, -75.21034], 13);
+
+        // Enlazar el OSM
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19
+        }).addTo(map);
+
+        // Crear la capa de mapa de calor (inicialmente desactivada)
+        var heatLayer = L.heatLayer([], {
+            radius: 20,  // Radio del punto de calor
+            blur: 15,    // Difuminado del punto de calor
+            maxZoom: 13,  // Zoom máximo en el que el mapa de calor será visible
+            gradient: {    // Gradiente de colores
+                0.2: 'blue',     // Años 2021-2022
+                0.4: 'lime',     // Años 2016-2020
+                0.6: 'yellow',   // Años 2011-2015
+                0.8: 'orange',   // Años 2006-2010
+                1.0: 'red'       // Años hasta 2005
+            }
+        }).addTo(map);
+
+        // Inicialmente, ocultar la capa de mapa de calor
+        heatLayer.remove();
+
+        // Función para convertir el año de instalación a intensidad
+        function yearToIntensity(year) {
+            if (year <= 2005) return 1.0;       // Rojo
+            if (year >= 2006 && year <= 2010) return 0.8;  // Naranja
+            if (year >= 2011 && year <= 2015) return 0.6;  // Amarillo
+            if (year >= 2016 && year <= 2020) return 0.4;  // Verde
+            if (year >= 2021) return 0.2;       // Azul
+            return 0.0; // En caso de datos fuera de rango
+        }
+
+        // Cargar los datos desde el archivo JSON
+        fetch('heatmap_data.json')
+            .then(response => response.json())
+            .then(data => {
+                // Convertir los datos de años a intensidades
+                var heatDataWithIntensity = data.map(([lat, lon, year]) => [lat, lon, yearToIntensity(year)]);
+
+                // Actualizar los datos de la capa de mapa de calor
+                heatLayer.setLatLngs(heatDataWithIntensity);
+            })
+            .catch(error => {
+                console.error("Error al cargar los datos: ", error);
+            });
+
+        // Botón para activar/desactivar el mapa de calor
+        var toggleButton = document.getElementById('toggleHeatmap');
+        var heatmapActive = false;
+
+        toggleButton.addEventListener('click', function() {
+            if (heatmapActive) {
+                map.removeLayer(heatLayer);
+                toggleButton.textContent = 'Activar Mapa de Calor';
+            } else {
+                map.addLayer(heatLayer);
+                toggleButton.textContent = 'Desactivar Mapa de Calor';
+            }
+            heatmapActive = !heatmapActive;
+        });
+
+        // Agregar la leyenda
+        var legend = L.control({ position: 'bottomright' });
+
+        legend.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'legend');
+            div.innerHTML += '<div class="legend-title">Antigüedad de Equipos</div>';
+            div.innerHTML += '<i style="background: blue"></i> 2021-2022<br>';
+            div.innerHTML += '<i style="background: lime"></i> 2016-2020<br>';
+            div.innerHTML += '<i style="background: yellow"></i> 2011-2015<br>';
+            div.innerHTML += '<i style="background: orange"></i> 2006-2010<br>';
+            div.innerHTML += '<i style="background: red"></i> Hasta 2005<br>';
+            return div;
+        };
+
+        legend.addTo(map);
+    </script>
+</body>
+</html>
